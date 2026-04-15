@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClinFit — Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ══════════ SIDEBAR ══════════ -->
+  <aside class="sidebar">
+    <div class="sidebar__logo">
+      <img src="assets/logo.png" alt="ClinFit" />
+    </div>
+
+    <div class="sidebar__user">
+      <div class="sidebar__avatar" id="sidebar-avatar">U</div>
+      <div>
+        <div class="sidebar__username" id="sidebar-username">Carregando...</div>
+        <div class="sidebar__role" id="sidebar-email"></div>
+      </div>
+    </div>
+
+    <nav class="sidebar__nav">
+      <a href="app.html"        class="nav-item" id="nav-dashboard">
+        <!-- ícone dashboard -->
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="clientes.html"   class="nav-item" id="nav-clientes">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Clientes
+      </a>
+      <a href="agenda.html"     class="nav-item" id="nav-agenda">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Agenda
+      </a>
+      <a href="financeiro.html" class="nav-item" id="nav-financeiro">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Financeiro
+      </a>
+      <a href="evolucao.html"   class="nav-item" id="nav-evolucao">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Evolução
+      </a>
+    </nav>
+
+    <div class="sidebar__footer">
+      <button class="btn-logout" id="btn-logout">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══════════ MAIN ══════════ -->
+  <main class="main">
+
+    <div class="main-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="mobile-menu-btn" id="mobile-menu-btn">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div>
+            <h1><span id="greeting-text">Bom dia</span>, <span id="greeting-name">...</span> 👋</h1>
+            <p id="current-date"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+
+      <!-- Métricas -->
+      <div class="metrics-grid mb-6" id="metrics-grid">
+        <div class="metric-card fade-in">
+          <div class="metric-icon blue">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="metric-label">Sessões Hoje</div>
+          <div class="metric-value" id="m-sessoes">—</div>
+          <div class="metric-sub">agendadas para hoje</div>
+        </div>
+
+        <div class="metric-card fade-in">
+          <div class="metric-icon green">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="metric-label">Clientes Ativos</div>
+          <div class="metric-value" id="m-clientes">—</div>
+          <div class="metric-sub">em acompanhamento</div>
+        </div>
+
+        <div class="metric-card fade-in">
+          <div class="metric-icon green">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div class="metric-label">Recebido no Mês</div>
+          <div class="metric-value" id="m-recebido">—</div>
+          <div class="metric-sub" id="m-recebido-sub">mês atual</div>
+        </div>
+
+        <div class="metric-card fade-in">
+          <div class="metric-icon yellow">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="metric-label">Pendente no Mês</div>
+          <div class="metric-value" id="m-pendente">—</div>
+          <div class="metric-sub">aguardando pagamento</div>
+        </div>
+      </div>
+
+      <!-- Grade inferior: próximas sessões + pagamentos pendentes -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" id="bottom-grid">
+
+        <!-- Próximas Sessões -->
+        <div>
+          <div class="section-header">
+            <span class="section-title">Sessões de Hoje</span>
+            <a href="agenda.html" class="btn btn-outline btn-sm">Ver agenda</a>
+          </div>
+          <div class="session-list" id="sessoes-hoje">
+            <div class="empty-state">
+              <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <p>Carregando sessões...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagamentos Pendentes -->
+        <div>
+          <div class="section-header">
+            <span class="section-title">Pagamentos Pendentes</span>
+            <a href="financeiro.html" class="btn btn-outline btn-sm">Ver todos</a>
+          </div>
+          <div class="session-list" id="pagamentos-pendentes">
+            <div class="empty-state">
+              <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <p>Carregando pagamentos...</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /main-content -->
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script type="module">
+  import { initPage, formatCurrency, formatDate, getGreeting } from './js/auth.js';
+  import supabase from './js/supabase.js';
+
+  (async () => {
+    const auth = await initPage('nav-dashboard');
+    if (!auth) return;
+    const { user } = auth;
+
+    // Atualiza saudação
+    document.getElementById('greeting-text').textContent = getGreeting();
+
+    const hoje = new Date().toISOString().split('T')[0];
+    const mesAtual = hoje.slice(0, 7); // YYYY-MM
+
+    // Busca os dados em paralelo
+    const [
+      { data: sessoesHoje },
+      { data: clientesAtivos },
+      { data: cobrancas }
+    ] = await Promise.all([
+      supabase.from('sessoes')
+        .select('*, clientes(nome)')
+        .eq('usuario_id', user.id)
+        .eq('data', hoje)
+        .order('horario'),
+
+      supabase.from('clientes')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .eq('status', 'ativo'),
+
+      supabase.from('cobrancas')
+        .select('*, clientes(nome)')
+        .eq('usuario_id', user.id)
+        .gte('vencimento', `${mesAtual}-01`)
+        .lte('vencimento', `${mesAtual}-31`)
+    ]);
+
+    // ── Métricas ──
+    document.getElementById('m-sessoes').textContent   = sessoesHoje?.length ?? 0;
+    document.getElementById('m-clientes').textContent  = clientesAtivos?.length ?? 0;
+
+    const recebido = cobrancas?.filter(c => c.status === 'pago').reduce((s, c) => s + +c.valor, 0) ?? 0;
+    const pendente = cobrancas?.filter(c => c.status === 'pendente').reduce((s, c) => s + +c.valor, 0) ?? 0;
+
+    document.getElementById('m-recebido').textContent  = formatCurrency(recebido);
+    document.getElementById('m-pendente').textContent  = formatCurrency(pendente);
+    document.getElementById('m-recebido-sub').textContent = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+    // ── Sessões de hoje ──
+    const listaSessoes = document.getElementById('sessoes-hoje');
+    if (!sessoesHoje?.length) {
+      listaSessoes.innerHTML = `
+        <div class="empty-state">
+          <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <p>Nenhuma sessão hoje</p>
+        </div>`;
+    } else {
+      const statusMap = { confirmada: 'badge-green', realizada: 'badge-gray', cancelada: 'badge-red' };
+      listaSessoes.innerHTML = sessoesHoje.map(s => `
+        <div class="session-item">
+          <div class="session-time">${s.horario?.slice(0,5)}</div>
+          <div class="session-info">
+            <div class="session-name">${s.clientes?.nome ?? '—'}</div>
+            <div class="session-detail">${s.tipo ?? ''} · ${s.duracao ?? 50} min</div>
+          </div>
+          <span class="badge ${statusMap[s.status] || 'badge-gray'}">${s.status ?? ''}</span>
+        </div>`).join('');
+    }
+
+    // ── Pagamentos pendentes ──
+    const listaPgtos = document.getElementById('pagamentos-pendentes');
+    const pendentes = cobrancas?.filter(c => c.status === 'pendente') ?? [];
+    if (!pendentes.length) {
+      listaPgtos.innerHTML = `
+        <div class="empty-state">
+          <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <p>Nenhum pagamento pendente</p>
+        </div>`;
+    } else {
+      listaPgtos.innerHTML = pendentes.map(c => `
+        <div class="session-item">
+          <div class="session-info">
+            <div class="session-name">${c.clientes?.nome ?? '—'}</div>
+            <div class="session-detail">Vence em ${formatDate(c.vencimento)} · ${c.descricao ?? ''}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-weight:700;color:var(--yellow)">${formatCurrency(c.valor)}</div>
+            <span class="badge badge-yellow">Pendente</span>
+          </div>
+        </div>`).join('');
+    }
+
+    // Ajuste responsivo do grid inferior
+    const mq = window.matchMedia('(max-width: 768px)');
+    const applyLayout = (m) => {
+      document.getElementById('bottom-grid').style.gridTemplateColumns = m.matches ? '1fr' : '1fr 1fr';
+    };
+    applyLayout(mq);
+    mq.addEventListener('change', applyLayout);
+
+  })();
+</script>
+
+</body>
+</html>

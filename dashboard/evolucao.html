@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClinFit — Evolução</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Chart.js para o gráfico de linha -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ══════════ SIDEBAR ══════════ -->
+  <aside class="sidebar">
+    <div class="sidebar__logo"><img src="assets/logo.png" alt="ClinFit" /></div>
+    <div class="sidebar__user">
+      <div class="sidebar__avatar" id="sidebar-avatar">U</div>
+      <div>
+        <div class="sidebar__username" id="sidebar-username">Carregando...</div>
+        <div class="sidebar__role" id="sidebar-email"></div>
+      </div>
+    </div>
+    <nav class="sidebar__nav">
+      <a href="app.html"        class="nav-item" id="nav-dashboard">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
+      <a href="clientes.html"   class="nav-item" id="nav-clientes">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</a>
+      <a href="agenda.html"     class="nav-item" id="nav-agenda">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Agenda</a>
+      <a href="financeiro.html" class="nav-item" id="nav-financeiro">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Financeiro</a>
+      <a href="evolucao.html"   class="nav-item" id="nav-evolucao">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Evolução</a>
+    </nav>
+    <div class="sidebar__footer">
+      <button class="btn-logout" id="btn-logout">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair</button>
+    </div>
+  </aside>
+
+  <!-- ══════════ MAIN ══════════ -->
+  <main class="main">
+    <div class="main-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="mobile-menu-btn" id="mobile-menu-btn">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div>
+          <h1>Evolução dos Pacientes</h1>
+          <p id="current-date"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+
+      <!-- Seletor de cliente + botão novo registro -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px;max-width:360px">
+          <select id="sel-cliente" class="form-control">
+            <option value="">Selecione um cliente...</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="btn-novo-registro" disabled>
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Novo Registro
+        </button>
+      </div>
+
+      <!-- Área do cliente selecionado -->
+      <div id="area-cliente" class="hidden">
+
+        <!-- Cards de resumo do cliente -->
+        <div class="metrics-grid mb-6" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+          <div class="metric-card">
+            <div class="metric-label">Peso Atual</div>
+            <div class="metric-value" id="ev-peso-atual">—</div>
+            <div class="metric-sub" id="ev-peso-diff"></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">% Gordura</div>
+            <div class="metric-value" id="ev-gordura">—</div>
+            <div class="metric-sub">último registro</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Cintura (cm)</div>
+            <div class="metric-value" id="ev-cintura">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Quadril (cm)</div>
+            <div class="metric-value" id="ev-quadril">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Registros</div>
+            <div class="metric-value" id="ev-total">0</div>
+            <div class="metric-sub">total</div>
+          </div>
+        </div>
+
+        <!-- Gráfico de peso -->
+        <div class="card mb-6">
+          <div class="section-header">
+            <span class="section-title">Evolução do Peso (kg)</span>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="grafico-peso"></canvas>
+          </div>
+        </div>
+
+        <!-- Tabela de registros -->
+        <div class="section-header">
+          <span class="section-title">Histórico Completo</span>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Peso (kg)</th>
+                <th>Gordura (%)</th>
+                <th>Cintura (cm)</th>
+                <th>Quadril (cm)</th>
+                <th>Braço (cm)</th>
+                <th>Observações</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-evolucao"></tbody>
+          </table>
+        </div>
+
+      </div><!-- /area-cliente -->
+
+      <!-- Estado vazio (antes de selecionar) -->
+      <div id="estado-vazio">
+        <div class="empty-state" style="padding:80px 24px">
+          <svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <p style="font-size:15px;font-weight:500">Selecione um cliente para ver a evolução</p>
+          <p style="font-size:13px">Acompanhe peso, medidas e composição corporal ao longo do tempo</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ══════════ MODAL REGISTRO ══════════ -->
+<div class="modal-overlay" id="modal-registro">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-reg-title">Novo Registro</h2>
+      <button class="modal-close" id="modal-reg-close">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="reg-id" />
+
+      <div class="form-group">
+        <label for="reg-data">Data *</label>
+        <input type="date" id="reg-data" class="form-control" required />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="reg-peso">Peso (kg)</label>
+          <input type="number" id="reg-peso" class="form-control" placeholder="Ex: 72.5" step="0.1" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="reg-gordura">% Gordura</label>
+          <input type="number" id="reg-gordura" class="form-control" placeholder="Ex: 18.5" step="0.1" min="0" max="100" />
+        </div>
+      </div>
+
+      <p style="font-size:12px;color:var(--text-muted);margin-top:4px;margin-bottom:4px">Medidas corporais (cm)</p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="reg-cintura">Cintura</label>
+          <input type="number" id="reg-cintura" class="form-control" placeholder="Ex: 80" step="0.5" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="reg-quadril">Quadril</label>
+          <input type="number" id="reg-quadril" class="form-control" placeholder="Ex: 95" step="0.5" min="0" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="reg-braco">Braço</label>
+        <input type="number" id="reg-braco" class="form-control" placeholder="Ex: 32" step="0.5" min="0" />
+      </div>
+
+      <div class="form-group">
+        <label for="reg-obs">Observações</label>
+        <textarea id="reg-obs" class="form-control" placeholder="Anotações sobre este registro..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" id="btn-excluir-reg" style="margin-right:auto;display:none">Excluir</button>
+      <button class="btn btn-secondary" id="modal-reg-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-reg">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script type="module">
+  import { initPage, showToast, setLoading, formatDate } from './js/auth.js';
+  import supabase from './js/supabase.js';
+
+  let userId   = null;
+  let clienteId = null;
+  let registros = [];
+  let grafico   = null;
+
+  (async () => {
+    const auth = await initPage('nav-evolucao');
+    if (!auth) return;
+    userId = auth.user.id;
+    await carregarClientes();
+  })();
+
+  // ── Clientes ─────────────────────────────────────────────────────────────
+  async function carregarClientes() {
+    const { data } = await supabase
+      .from('clientes').select('id,nome').eq('usuario_id', userId).order('nome');
+
+    const sel = document.getElementById('sel-cliente');
+    sel.innerHTML = '<option value="">Selecione um cliente...</option>' +
+      (data || []).map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+  }
+
+  document.getElementById('sel-cliente').addEventListener('change', async (e) => {
+    clienteId = e.target.value || null;
+    const btnNovo = document.getElementById('btn-novo-registro');
+    btnNovo.disabled = !clienteId;
+
+    if (clienteId) {
+      document.getElementById('area-cliente').classList.remove('hidden');
+      document.getElementById('estado-vazio').classList.add('hidden');
+      await carregarRegistros();
+    } else {
+      document.getElementById('area-cliente').classList.add('hidden');
+      document.getElementById('estado-vazio').classList.remove('hidden');
+    }
+  });
+
+  // ── Registros ─────────────────────────────────────────────────────────────
+  async function carregarRegistros() {
+    const { data, error } = await supabase
+      .from('evolucao')
+      .select('*')
+      .eq('usuario_id', userId)
+      .eq('cliente_id', clienteId)
+      .order('data');
+
+    if (error) { showToast('Erro ao carregar registros.', 'error'); return; }
+    registros = data || [];
+    renderResumo();
+    renderGrafico();
+    renderTabela();
+  }
+
+  function renderResumo() {
+    if (!registros.length) {
+      ['ev-peso-atual','ev-gordura','ev-cintura','ev-quadril'].forEach(id => {
+        document.getElementById(id).textContent = '—';
+      });
+      document.getElementById('ev-total').textContent = '0';
+      document.getElementById('ev-peso-diff').textContent = '';
+      return;
+    }
+
+    const ultimo    = registros[registros.length - 1];
+    const primeiro  = registros[0];
+
+    document.getElementById('ev-peso-atual').textContent = ultimo.peso ? `${ultimo.peso} kg` : '—';
+    document.getElementById('ev-gordura').textContent    = ultimo.gordura ? `${ultimo.gordura}%` : '—';
+    document.getElementById('ev-cintura').textContent    = ultimo.cintura ?? '—';
+    document.getElementById('ev-quadril').textContent    = ultimo.quadril ?? '—';
+    document.getElementById('ev-total').textContent      = registros.length;
+
+    // Diferença de peso
+    if (ultimo.peso && primeiro.peso && registros.length > 1) {
+      const diff = (ultimo.peso - primeiro.peso).toFixed(1);
+      const el   = document.getElementById('ev-peso-diff');
+      el.textContent = `${diff > 0 ? '+' : ''}${diff} kg desde o início`;
+      el.style.color = diff > 0 ? 'var(--yellow)' : 'var(--green)';
+    }
+  }
+
+  function renderGrafico() {
+    const ctx = document.getElementById('grafico-peso').getContext('2d');
+
+    // Destrói gráfico anterior se existir
+    if (grafico) { grafico.destroy(); grafico = null; }
+
+    const comPeso = registros.filter(r => r.peso != null);
+    if (!comPeso.length) return;
+
+    const labels = comPeso.map(r => formatDate(r.data));
+    const dados  = comPeso.map(r => r.peso);
+
+    grafico = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Peso (kg)',
+          data: dados,
+          borderColor: '#16a34a',
+          backgroundColor: 'rgba(22, 163, 74, 0.08)',
+          borderWidth: 2,
+          pointBackgroundColor: '#16a34a',
+          pointBorderColor: '#0a0a0a',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          fill: true,
+          tension: 0.35
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#111827',
+            borderColor: '#1f2937',
+            borderWidth: 1,
+            titleColor: '#9ca3af',
+            bodyColor: '#f9fafb',
+            callbacks: {
+              label: ctx => ` ${ctx.parsed.y} kg`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(31,41,55,0.8)' },
+            ticks: { color: '#6b7280', font: { size: 11 } }
+          },
+          y: {
+            grid: { color: 'rgba(31,41,55,0.8)' },
+            ticks: { color: '#6b7280', font: { size: 11 }, callback: v => `${v} kg` }
+          }
+        }
+      }
+    });
+  }
+
+  function renderTabela() {
+    const tbody = document.getElementById('tabela-evolucao');
+
+    if (!registros.length) {
+      tbody.innerHTML = `<tr><td colspan="8">
+        <div class="empty-state">
+          <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <p>Nenhum registro encontrado</p>
+        </div>
+      </td></tr>`;
+      return;
+    }
+
+    // Exibe do mais recente para o mais antigo
+    const lista = [...registros].reverse();
+
+    tbody.innerHTML = lista.map(r => `
+      <tr class="fade-in">
+        <td>${formatDate(r.data)}</td>
+        <td>${r.peso    ?? '—'}</td>
+        <td>${r.gordura ?? '—'}</td>
+        <td>${r.cintura ?? '—'}</td>
+        <td>${r.quadril ?? '—'}</td>
+        <td>${r.braco   ?? '—'}</td>
+        <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${r.observacoes || ''}">${r.observacoes || '—'}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="abrirEdicao('${r.id}')" title="Editar">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="excluir('${r.id}')" title="Excluir">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  // ── Modal ─────────────────────────────────────────────────────────────────
+  function abrirModal() { document.getElementById('modal-registro').classList.add('open'); }
+  function fecharModal() {
+    document.getElementById('modal-registro').classList.remove('open');
+    limparForm();
+  }
+
+  function limparForm() {
+    document.getElementById('reg-id').value      = '';
+    document.getElementById('reg-data').value    = new Date().toISOString().split('T')[0];
+    document.getElementById('reg-peso').value    = '';
+    document.getElementById('reg-gordura').value = '';
+    document.getElementById('reg-cintura').value = '';
+    document.getElementById('reg-quadril').value = '';
+    document.getElementById('reg-braco').value   = '';
+    document.getElementById('reg-obs').value     = '';
+    document.getElementById('modal-reg-title').textContent = 'Novo Registro';
+    document.getElementById('btn-excluir-reg').style.display = 'none';
+  }
+
+  document.getElementById('btn-novo-registro').addEventListener('click', () => {
+    limparForm(); abrirModal();
+  });
+  document.getElementById('modal-reg-close').addEventListener('click', fecharModal);
+  document.getElementById('modal-reg-cancel').addEventListener('click', fecharModal);
+  document.getElementById('modal-registro').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) fecharModal();
+  });
+
+  window.abrirEdicao = (id) => {
+    const r = registros.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('reg-id').value      = r.id;
+    document.getElementById('reg-data').value    = r.data || '';
+    document.getElementById('reg-peso').value    = r.peso ?? '';
+    document.getElementById('reg-gordura').value = r.gordura ?? '';
+    document.getElementById('reg-cintura').value = r.cintura ?? '';
+    document.getElementById('reg-quadril').value = r.quadril ?? '';
+    document.getElementById('reg-braco').value   = r.braco ?? '';
+    document.getElementById('reg-obs').value     = r.observacoes || '';
+    document.getElementById('modal-reg-title').textContent = 'Editar Registro';
+    document.getElementById('btn-excluir-reg').style.display = 'inline-flex';
+    abrirModal();
+  };
+
+  // ── Salvar ────────────────────────────────────────────────────────────────
+  document.getElementById('btn-salvar-reg').addEventListener('click', async () => {
+    const btn  = document.getElementById('btn-salvar-reg');
+    const id   = document.getElementById('reg-id').value;
+    const data = document.getElementById('reg-data').value;
+
+    if (!data) { showToast('Informe a data do registro.', 'error'); return; }
+
+    const numOuNull = (id) => {
+      const v = document.getElementById(id).value;
+      return v !== '' ? parseFloat(v) : null;
+    };
+
+    const payload = {
+      usuario_id:  userId,
+      cliente_id:  clienteId,
+      data,
+      peso:        numOuNull('reg-peso'),
+      gordura:     numOuNull('reg-gordura'),
+      cintura:     numOuNull('reg-cintura'),
+      quadril:     numOuNull('reg-quadril'),
+      braco:       numOuNull('reg-braco'),
+      observacoes: document.getElementById('reg-obs').value.trim() || null
+    };
+
+    setLoading(btn, true);
+    try {
+      if (id) {
+        const { error } = await supabase.from('evolucao').update(payload).eq('id', id);
+        if (error) throw error;
+        showToast('Registro atualizado!', 'success');
+      } else {
+        const { error } = await supabase.from('evolucao').insert(payload);
+        if (error) throw error;
+        showToast('Registro salvo!', 'success');
+      }
+      fecharModal();
+      await carregarRegistros();
+    } catch (err) {
+      showToast(`Erro: ${err.message}`, 'error');
+    } finally {
+      setLoading(btn, false);
+    }
+  });
+
+  // ── Excluir ───────────────────────────────────────────────────────────────
+  document.getElementById('btn-excluir-reg').addEventListener('click', async () => {
+    const id = document.getElementById('reg-id').value;
+    if (!id || !confirm('Deseja excluir este registro?')) return;
+    const { error } = await supabase.from('evolucao').delete().eq('id', id);
+    if (error) { showToast('Erro ao excluir.', 'error'); return; }
+    showToast('Registro excluído.', 'info');
+    fecharModal();
+    await carregarRegistros();
+  });
+
+  window.excluir = async (id) => {
+    if (!confirm('Deseja excluir este registro?')) return;
+    const { error } = await supabase.from('evolucao').delete().eq('id', id);
+    if (error) { showToast('Erro ao excluir.', 'error'); return; }
+    showToast('Registro excluído.', 'info');
+    await carregarRegistros();
+  };
+</script>
+
+</body>
+</html>
