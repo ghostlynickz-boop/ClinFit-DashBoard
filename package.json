@@ -1,24 +1,6 @@
 {
   "name": "clinfit-dashboard",
   "version": "1.0.0",
-  "type": "module",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ghostlynickz-boop/clinfit-dashboard.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/ghostlynickz-boop/clinfit-dashboard/issues"
-  },
-  "homepage": "https://github.com/ghostlynickz-boop/clinfit-dashboard#readme",
   "dependencies": {
     "@supabase/supabase-js": "^2.103.2"
   }
