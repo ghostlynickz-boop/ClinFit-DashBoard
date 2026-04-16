@@ -236,10 +236,10 @@
   const SUPABASE_URL      = 'https://plzxurlcvtjoihqmkrjs.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsenh1cmxjdnRqb2locW1rcmpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjUxMTEsImV4cCI6MjA5MTg0MTExMX0.lRmxHEMwa4k9o0V15Wmnl49othmFntHcK0XZF-SvslM';
 
-  // detectSessionInUrl: false — tratamos o token manualmente para suportar
-  // tanto o hash (#access_token=...) quanto a query string (?token=...)
+  // detectSessionInUrl: true — Supabase processa o #access_token do hash
+  // automaticamente assim que o cliente é criado
   const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
 
   // ── Helpers de UI ─────────────────────────────────────────────────────
@@ -259,59 +259,58 @@
     document.getElementById('alert-success').classList.remove('visible');
   }
 
-  // ── Lê e valida o token da URL ────────────────────────────────────────
-  (async () => {
-    // Formulário oculto até o token ser validado
-    document.getElementById('form-wrap').style.display = 'none';
+  // ── Oculta formulário enquanto valida ─────────────────────────────────
+  document.getElementById('form-wrap').style.display = 'none';
 
-    // ── Forma 1: hash  #access_token=TOKEN&refresh_token=TOKEN&type=invite
-    const hashParams   = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken  = hashParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token');
-    const hashType     = hashParams.get('type');
+  // ── Estratégia principal: onAuthStateChange ───────────────────────────
+  // Quando detectSessionInUrl: true, o Supabase processa o hash e dispara
+  // INITIAL_SESSION (se já há sessão) ou SIGNED_IN (após processar o token)
+  let formShown = false;
 
-    // ── Forma 2: query string  ?token=TOKEN&type=invite
+  _sb.auth.onAuthStateChange((event, session) => {
+    console.log('[definir-senha] auth event:', event, '| session:', !!session);
+
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+      if (!formShown) { formShown = true; mostrarFormulario(); }
+    }
+
+    if (event === 'INITIAL_SESSION' && !session) {
+      // Supabase terminou de verificar e não há sessão —
+      // tenta o fallback de query string antes de mostrar erro
+      handleQueryStringFallback();
+    }
+  });
+
+  // ── Fallback: query string ?token=TOKEN&type=invite ───────────────────
+  async function handleQueryStringFallback() {
     const queryParams = new URLSearchParams(window.location.search);
     const queryToken  = queryParams.get('token');
     const queryType   = queryParams.get('type');
 
-    if (accessToken && (hashType === 'invite' || hashType === 'recovery' || hashType === 'signup')) {
-      // ── Forma 1: estabelece sessão com access_token + refresh_token ──
-      const { error } = await _sb.auth.setSession({
-        access_token:  accessToken,
-        refresh_token: refreshToken || ''
-      });
-      if (!error) {
-        mostrarFormulario();
-      } else {
-        console.error('[definir-senha] setSession error:', error);
-        mostrarLinkInvalido();
-      }
-
-    } else if (queryToken && queryType === 'invite') {
-      // ── Forma 2: verifica OTP via token_hash ─────────────────────────
+    if (queryToken && (queryType === 'invite' || queryType === 'magiclink')) {
+      console.log('[definir-senha] tentando verifyOtp com token da query string');
       const { error } = await _sb.auth.verifyOtp({
         token_hash: queryToken,
         type: 'invite'
       });
-      if (!error) {
-        mostrarFormulario();
-      } else {
-        console.error('[definir-senha] verifyOtp error:', error);
-        mostrarLinkInvalido();
-      }
-
-    } else {
-      // ── Sem token na URL — verifica se já existe sessão ativa ─────────
-      // (usuário que voltou à página após já ter feito login)
-      const { data: { session } } = await _sb.auth.getSession();
-      if (session) {
-        mostrarFormulario();
-      } else {
-        mostrarLinkInvalido();
-      }
+      if (!error && !formShown) { formShown = true; mostrarFormulario(); return; }
+      console.error('[definir-senha] verifyOtp error:', error);
     }
-  })();
+
+    // Sem token válido em nenhuma das formas
+    if (!formShown) mostrarLinkInvalido();
+  }
+
+  // ── Segurança extra: timeout de 5s caso onAuthStateChange não dispare ─
+  setTimeout(() => {
+    if (!formShown) {
+      console.warn('[definir-senha] timeout — verificando sessão manualmente');
+      _sb.auth.getSession().then(({ data: { session } }) => {
+        if (session && !formShown) { formShown = true; mostrarFormulario(); }
+        else if (!formShown) mostrarLinkInvalido();
+      });
+    }
+  }, 5000);
 
   // ── Mostrar/ocultar senha ──────────────────────────────────────────────
   function toggleSenha(inputId, iconId) {
@@ -330,22 +329,18 @@
     const senha     = document.getElementById('senha').value;
     const confirmar = document.getElementById('confirmar').value;
 
-    // Validações
     if (!senha)              { mostrarErroInline('Informe a nova senha.'); return; }
     if (senha.length < 6)   { mostrarErroInline('A senha deve ter pelo menos 6 caracteres.'); return; }
     if (senha !== confirmar) { mostrarErroInline('As senhas não coincidem.'); return; }
 
-    // Loading
     btn.disabled  = true;
     btn.innerHTML = '<div class="spinner"></div> Salvando...';
     document.getElementById('alert-error').classList.remove('visible');
 
     try {
       const { error } = await _sb.auth.updateUser({ password: senha });
-
       if (error) { mostrarErroInline(error.message); return; }
 
-      // Sucesso
       document.getElementById('alert-success').classList.add('visible');
       setTimeout(() => { window.location.href = 'app.html'; }, 1800);
 
@@ -357,7 +352,6 @@
     }
   });
 
-  // Submete ao pressionar Enter
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') document.getElementById('btn-definir').click();
   });
