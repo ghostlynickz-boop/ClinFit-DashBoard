@@ -10,9 +10,13 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // ── Validação de assinatura HMAC (se WEBHOOK_SECRET estiver configurado) ─
+  // ── Validação de assinatura HMAC ─────────────────────────────────────────
   const secret = process.env.WEBHOOK_SECRET;
-  if (secret) {
+  if (!secret) {
+    console.error('[webhook] WEBHOOK_SECRET não configurado — rejeitando requisição');
+    return res.status(500).json({ error: 'Webhook not configured' });
+  }
+  if (true) {
     const signature = req.headers['x-kirvano-signature'] || req.headers['x-signature'] || '';
     const payload   = JSON.stringify(req.body);
     const expected  = crypto.createHmac('sha256', secret).update(payload).digest('hex');
@@ -25,7 +29,8 @@ module.exports = async (req, res) => {
   // ── Dados do payload ─────────────────────────────────────────────────────
   const { nome, email } = req.body ?? {};
 
-  if (!email || !email.includes('@')) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  if (!email || !emailRegex.test(email)) {
     return res.status(400).json({ error: 'E-mail inválido ou ausente' });
   }
 

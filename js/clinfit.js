@@ -170,9 +170,10 @@
 
       if (elAvatar) {
         if (avatarUrl) {
-          /* Exibe a foto de perfil salva */
+          /* Exibe a foto de perfil salva — escapa a URL para evitar CSS injection */
+          var safeUrl = avatarUrl.replace(/['"\\]/g, '');
           elAvatar.textContent = '';
-          elAvatar.style.backgroundImage  = 'url(' + avatarUrl + ')';
+          elAvatar.style.backgroundImage  = 'url("' + safeUrl + '")';
           elAvatar.style.backgroundSize   = 'cover';
           elAvatar.style.backgroundRepeat = 'no-repeat';
           elAvatar.style.backgroundPosition = 'center';

@@ -231,10 +231,10 @@
         <div class="session-item">
           <div class="session-time">${s.horario?.slice(0,5)}</div>
           <div class="session-info">
-            <div class="session-name">${cliMap[s.cliente_id] ?? '—'}</div>
-            <div class="session-detail">${s.tipo ?? ''} · ${s.duracao ?? 50} min</div>
+            <div class="session-name">${CF.sanitize(cliMap[s.cliente_id] ?? '—')}</div>
+            <div class="session-detail">${CF.sanitize(s.tipo ?? '')} · ${CF.sanitize(String(s.duracao ?? 50))} min</div>
           </div>
-          <span class="badge ${statusMap[s.status] || 'badge-gray'}">${s.status ?? ''}</span>
+          <span class="badge ${statusMap[s.status] || 'badge-gray'}">${CF.sanitize(s.status ?? '')}</span>
         </div>`).join('');
     }
 
@@ -251,8 +251,8 @@
       listaPgtos.innerHTML = pendentes.map(c => `
         <div class="session-item">
           <div class="session-info">
-            <div class="session-name">${cliMap[c.cliente_id] ?? '—'}</div>
-            <div class="session-detail">Vence em ${CF.date(c.vencimento)} · ${c.descricao ?? ''}</div>
+            <div class="session-name">${CF.sanitize(cliMap[c.cliente_id] ?? '—')}</div>
+            <div class="session-detail">Vence em ${CF.date(c.vencimento)} · ${CF.sanitize(c.descricao ?? '')}</div>
           </div>
           <div style="text-align:right;flex-shrink:0">
             <div style="font-weight:700;color:var(--yellow)">${CF.currency(c.valor)}</div>

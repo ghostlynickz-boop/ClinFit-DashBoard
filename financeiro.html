@@ -349,9 +349,9 @@
 
     tbody.innerHTML = lista.map(c => `
       <tr class="fade-in">
-        <td><strong>${c.nomeCliente || '—'}</strong></td>
-        <td>${c.descricao || '—'}</td>
-        <td><span class="badge badge-blue">${tipoLabel[c.tipo] || c.tipo}</span></td>
+        <td><strong>${CF.sanitize(c.nomeCliente || '—')}</strong></td>
+        <td>${CF.sanitize(c.descricao || '—')}</td>
+        <td><span class="badge badge-blue">${CF.sanitize(tipoLabel[c.tipo] || c.tipo)}</span></td>
         <td>${CF.date(c.vencimento)}</td>
         <td style="font-weight:700">${CF.currency(c.valor)}</td>
         <td>

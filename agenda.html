@@ -240,9 +240,9 @@
       const div = document.createElement('div');
       div.className = `agenda-session ${s.status}`;
       div.innerHTML = `
-        <div class="s-time">${s.horario?.slice(0,5)}</div>
-        <div class="s-name">${cliente?.nome || '—'}</div>`;
-      div.title = `${cliente?.nome} · ${s.tipo} · ${s.duracao}min`;
+        <div class="s-time">${CF.sanitize(s.horario?.slice(0,5) || '—')}</div>
+        <div class="s-name">${CF.sanitize(cliente?.nome || '—')}</div>`;
+      div.title = `${CF.sanitize(cliente?.nome || '—')} · ${CF.sanitize(s.tipo || '—')} · ${CF.sanitize(String(s.duracao || ''))}min`;
       div.addEventListener('click', () => abrirEdicaoSessao(s.id));
       slot.appendChild(div);
     });

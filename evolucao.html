@@ -379,7 +379,7 @@
         <td>${r.cintura ?? '—'}</td>
         <td>${r.quadril ?? '—'}</td>
         <td>${r.braco   ?? '—'}</td>
-        <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${r.observacoes || ''}">${r.observacoes || '—'}</td>
+        <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${CF.sanitize(r.observacoes || '')}">${CF.sanitize(r.observacoes || '—')}</td>
         <td>
           <div style="display:flex;gap:6px">
             <button class="btn btn-outline btn-sm" onclick="abrirEdicao('${r.id}')" title="Editar">
