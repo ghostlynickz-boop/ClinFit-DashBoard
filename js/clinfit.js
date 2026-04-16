@@ -28,6 +28,16 @@
 
   /* ── Utilitários ─────────────────────────────────────────────────────── */
   window.CF = {
+    /* Escapa HTML para evitar XSS em innerHTML */
+    sanitize: function (str) {
+      if (str === null || str === undefined) return '—';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+    },
 
     /* Exibe notificação toast */
     toast: function (message, type) {

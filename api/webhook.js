@@ -1,54 +1,55 @@
-const { createClient } = require('@supabase/supabase-js')
-
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-}
+const crypto = require('crypto');
+const { createClient } = require('@supabase/supabase-js');
 
 module.exports = async (req, res) => {
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204, CORS_HEADERS)
-    return res.end()
+  // ── CORS ────────────────────────────────────────────────────────────────
+  res.setHeader('Access-Control-Allow-Origin', 'https://www.kirvano.com');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Kirvano-Signature');
+
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  // ── Validação de assinatura HMAC (se WEBHOOK_SECRET estiver configurado) ─
+  const secret = process.env.WEBHOOK_SECRET;
+  if (secret) {
+    const signature = req.headers['x-kirvano-signature'] || req.headers['x-signature'] || '';
+    const payload   = JSON.stringify(req.body);
+    const expected  = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+    if (signature !== expected && signature !== `sha256=${expected}`) {
+      console.warn('[webhook] Assinatura inválida');
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
   }
 
-  if (req.method !== 'POST') {
-    res.writeHead(405, CORS_HEADERS)
-    return res.end(JSON.stringify({ error: 'Método não permitido' }))
+  // ── Dados do payload ─────────────────────────────────────────────────────
+  const { nome, email } = req.body ?? {};
+
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'E-mail inválido ou ausente' });
   }
+
+  // ── Supabase Admin ───────────────────────────────────────────────────────
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_KEY
+  );
 
   try {
-    const { nome, email } = req.body ?? {}
-
-    if (!email || !nome) {
-      res.writeHead(400, CORS_HEADERS)
-      return res.end(JSON.stringify({ error: 'Email e nome são obrigatórios' }))
-    }
-
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_KEY,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
-
-    const { data, error } = await supabase.auth.admin.inviteUserByEmail(
-      email.trim().toLowerCase(),
-      { data: { nome: nome.trim() } }
-    )
+    const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
+      data: { nome: nome || email.split('@')[0] }
+    });
 
     if (error) {
-      if (error.message.includes('already been registered')) {
-        res.writeHead(200, CORS_HEADERS)
-        return res.end(JSON.stringify({ success: true, message: 'Usuário já existe' }))
-      }
-      throw error
+      console.error('[webhook] Erro ao convidar usuário:', error.message);
+      return res.status(500).json({ error: error.message });
     }
 
-    res.writeHead(200, CORS_HEADERS)
-    return res.end(JSON.stringify({ success: true, email }))
+    console.log('[webhook] Usuário convidado:', email);
+    return res.status(200).json({ ok: true });
 
   } catch (err) {
-    res.writeHead(500, CORS_HEADERS)
-    return res.end(JSON.stringify({ error: err.message }))
+    console.error('[webhook] Erro inesperado:', err);
+    return res.status(500).json({ error: 'Erro interno' });
   }
-}
+};
