@@ -169,14 +169,15 @@
     const hoje = new Date().toISOString().split('T')[0];
     const mesAtual = hoje.slice(0, 7); // YYYY-MM
 
-    // Busca os dados em paralelo
+    // Busca os dados em paralelo (sem join PostgREST — resolve nomes localmente)
     const [
       { data: sessoesHoje },
       { data: clientesAtivos },
-      { data: cobrancas }
+      { data: cobrancas },
+      { data: todosClientes }
     ] = await Promise.all([
       _sb.from('sessoes')
-        .select('*, clientes(nome)')
+        .select('*')
         .eq('usuario_id', user.id)
         .eq('data', hoje)
         .order('horario'),
@@ -187,11 +188,19 @@
         .eq('status', 'ativo'),
 
       _sb.from('cobrancas')
-        .select('*, clientes(nome)')
+        .select('*')
         .eq('usuario_id', user.id)
         .gte('vencimento', (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-01'; })())
-        .lte('vencimento', (() => { const d = new Date(); const y = d.getFullYear(); const m = d.getMonth()+1; const last = new Date(y, m, 0).getDate(); return y + '-' + String(m).padStart(2,'0') + '-' + String(last).padStart(2,'0'); })())
+        .lte('vencimento', (() => { const d = new Date(); const y = d.getFullYear(); const m = d.getMonth()+1; const last = new Date(y, m, 0).getDate(); return y + '-' + String(m).padStart(2,'0') + '-' + String(last).padStart(2,'0'); })()),
+
+      _sb.from('clientes')
+        .select('id, nome')
+        .eq('usuario_id', user.id)
     ]);
+
+    // Mapa id → nome para resolução local
+    const cliMap = {};
+    (todosClientes || []).forEach(c => { cliMap[c.id] = c.nome; });
 
     // ── Métricas ──
     document.getElementById('m-sessoes').textContent   = sessoesHoje?.length ?? 0;
@@ -218,7 +227,7 @@
         <div class="session-item">
           <div class="session-time">${s.horario?.slice(0,5)}</div>
           <div class="session-info">
-            <div class="session-name">${s.clientes?.nome ?? '—'}</div>
+            <div class="session-name">${cliMap[s.cliente_id] ?? '—'}</div>
             <div class="session-detail">${s.tipo ?? ''} · ${s.duracao ?? 50} min</div>
           </div>
           <span class="badge ${statusMap[s.status] || 'badge-gray'}">${s.status ?? ''}</span>
@@ -238,7 +247,7 @@
       listaPgtos.innerHTML = pendentes.map(c => `
         <div class="session-item">
           <div class="session-info">
-            <div class="session-name">${c.clientes?.nome ?? '—'}</div>
+            <div class="session-name">${cliMap[c.cliente_id] ?? '—'}</div>
             <div class="session-detail">Vence em ${CF.date(c.vencimento)} · ${c.descricao ?? ''}</div>
           </div>
           <div style="text-align:right;flex-shrink:0">

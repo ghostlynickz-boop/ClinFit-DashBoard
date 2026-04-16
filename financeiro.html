@@ -252,7 +252,7 @@
 
     const { data, error } = await _sb
       .from('cobrancas')
-      .select('*, clientes(nome)')
+      .select('*')
       .eq('usuario_id', userId)
       .gte('vencimento', inicio)
       .lte('vencimento', fim)
@@ -263,7 +263,11 @@
       console.error('[financeiro] Supabase error:', error);
       return;
     }
-    cobrancas = data || [];
+
+    // Resolve client names locally from the already-loaded clientes array
+    const cliMap = {};
+    clientes.forEach(c => { cliMap[c.id] = c.nome; });
+    cobrancas = (data || []).map(c => ({ ...c, nomeCliente: cliMap[c.cliente_id] || '—' }));
     renderResumo();
     renderTabela(cobrancas);
   }
@@ -297,7 +301,7 @@
 
     tbody.innerHTML = lista.map(c => `
       <tr class="fade-in">
-        <td><strong>${c.clientes?.nome || '—'}</strong></td>
+        <td><strong>${c.nomeCliente || '—'}</strong></td>
         <td>${c.descricao || '—'}</td>
         <td><span class="badge badge-blue">${tipoLabel[c.tipo] || c.tipo}</span></td>
         <td>${CF.date(c.vencimento)}</td>
@@ -330,7 +334,7 @@
     const q  = document.getElementById('busca-cob').value.toLowerCase();
     const st = document.getElementById('filtro-cob').value;
     const lista = cobrancas.filter(c =>
-      (c.clientes?.nome?.toLowerCase().includes(q) || c.descricao?.toLowerCase().includes(q)) &&
+      ((c.nomeCliente || '').toLowerCase().includes(q) || (c.descricao || '').toLowerCase().includes(q)) &&
       (!st || c.status === st)
     );
     renderTabela(lista);
