@@ -37,7 +37,8 @@ module.exports = async (req, res) => {
 
   try {
     const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
-      data: { nome: nome || email.split('@')[0] }
+      data:       { nome: nome || email.split('@')[0] },
+      redirectTo: 'https://clin-fit-dash-board.vercel.app/definir-senha.html'
     });
 
     if (error) {
