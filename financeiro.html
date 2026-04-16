@@ -243,31 +243,65 @@
   }
 
   async function carregarCobrancas() {
+    // ── 1. Exibe estado de carregamento imediatamente ─────────────────────
+    document.getElementById('lista-cobrancas').innerHTML = `
+      <tr><td colspan="7">
+        <div class="empty-state">
+          <div class="loader"></div>
+          <p>Carregando cobranças...</p>
+        </div>
+      </td></tr>`;
+
+    // ── 2. Monta intervalo do mês corretamente ────────────────────────────
     const { ano, mes } = getMes();
-    const mm      = String(mes).padStart(2, '0');
-    const inicio  = `${ano}-${mm}-01`;
-    // Último dia real do mês — evita datas inválidas como 2026-04-31
+    const mm        = String(mes).padStart(2, '0');
+    const inicio    = `${ano}-${mm}-01`;
+    // new Date(ano, mes, 0) → último dia real do mês (ex: abril = 30, nunca 31)
     const ultimoDia = new Date(ano, mes, 0).getDate();
     const fim       = `${ano}-${mm}-${String(ultimoDia).padStart(2, '0')}`;
 
+    console.log('[financeiro] Iniciando busca:', { userId, inicio, fim });
+
+    // ── 3. Query ao Supabase ──────────────────────────────────────────────
+    //    Tabela: cobrancas
+    //    Campos: id, usuario_id, cliente_id, valor, vencimento,
+    //            descricao, tipo, status, criado_em
+    //    Nomes dos clientes resolvidos localmente via cliMap (sem join FK)
     const { data, error } = await _sb
       .from('cobrancas')
-      .select('*')
-      .eq('usuario_id', userId)
+      .select('id, usuario_id, cliente_id, valor, vencimento, descricao, tipo, status, criado_em')
+      .eq('usuario_id', userId)          // filtra pelo user logado
       .gte('vencimento', inicio)
       .lte('vencimento', fim)
       .order('vencimento');
 
+    // ── 4. Tratamento de erro — sempre limpa o loading ────────────────────
     if (error) {
-      CF.toast('Erro: ' + error.message, 'error');
-      console.error('[financeiro] Supabase error:', error);
+      console.error('Erro detalhado:', error);
+      CF.toast('Erro ao carregar cobranças: ' + error.message, 'error');
+      // Remove o spinner e mostra mensagem de erro na tabela
+      document.getElementById('lista-cobrancas').innerHTML = `
+        <tr><td colspan="7">
+          <div class="empty-state">
+            <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <p style="color:var(--red)">Falha ao carregar. Verifique o console (F12) para detalhes.</p>
+          </div>
+        </td></tr>`;
       return;
     }
 
-    // Resolve client names locally from the already-loaded clientes array
+    console.log('[financeiro] Cobranças recebidas:', data?.length ?? 0, 'registros');
+
+    // ── 5. Resolve nomes localmente usando o array clientes já carregado ──
+    //    (evita depender de FK no Supabase para o join clientes(nome))
     const cliMap = {};
     clientes.forEach(c => { cliMap[c.id] = c.nome; });
-    cobrancas = (data || []).map(c => ({ ...c, nomeCliente: cliMap[c.cliente_id] || '—' }));
+
+    cobrancas = (data || []).map(c => ({
+      ...c,
+      nomeCliente: cliMap[c.cliente_id] || '—'
+    }));
+
     renderResumo();
     renderTabela(cobrancas);
   }
