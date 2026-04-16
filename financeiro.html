@@ -33,6 +33,8 @@
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Financeiro</a>
       <a href="evolucao.html"   class="nav-item" id="nav-evolucao">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Evolução</a>
+      <a href="configuracoes.html" class="nav-item" id="nav-configuracoes">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configurações</a>
     </nav>
     <div class="sidebar__footer">
       <button class="btn-logout" id="btn-logout">
@@ -243,57 +245,69 @@
   }
 
   async function carregarCobrancas() {
-    // ── 1. Exibe estado de carregamento imediatamente ─────────────────────
-    document.getElementById('lista-cobrancas').innerHTML = `
-      <tr><td colspan="7">
-        <div class="empty-state">
-          <div class="loader"></div>
-          <p>Carregando cobranças...</p>
-        </div>
-      </td></tr>`;
+    const tbody = document.getElementById('lista-cobrancas');
 
-    // ── 2. Monta intervalo do mês corretamente ────────────────────────────
+    // ── 1. Spinner imediato ───────────────────────────────────────────────
+    tbody.innerHTML = `<tr><td colspan="7">
+      <div class="empty-state"><div class="loader"></div><p>Carregando cobranças...</p></div>
+    </td></tr>`;
+
+    // ── 2. Intervalo do mês (último dia real — evita 31/04, 31/02 etc.) ──
     const { ano, mes } = getMes();
     const mm        = String(mes).padStart(2, '0');
     const inicio    = `${ano}-${mm}-01`;
-    // new Date(ano, mes, 0) → último dia real do mês (ex: abril = 30, nunca 31)
     const ultimoDia = new Date(ano, mes, 0).getDate();
     const fim       = `${ano}-${mm}-${String(ultimoDia).padStart(2, '0')}`;
 
-    console.log('[financeiro] Iniciando busca:', { userId, inicio, fim });
+    // Diagnóstico — visível no console (F12)
+    console.log('%c[ClinFit Financeiro]', 'color:#16a34a;font-weight:bold',
+      'userId:', userId, '| período:', inicio, '→', fim);
 
-    // ── 3. Query ao Supabase ──────────────────────────────────────────────
-    //    Tabela: cobrancas
-    //    Campos: id, usuario_id, cliente_id, valor, vencimento,
-    //            descricao, tipo, status, criado_em
-    //    Nomes dos clientes resolvidos localmente via cliMap (sem join FK)
-    const { data, error } = await _sb
-      .from('cobrancas')
-      .select('id, usuario_id, cliente_id, valor, vencimento, descricao, tipo, status, criado_em')
-      .eq('usuario_id', userId)          // filtra pelo user logado
-      .gte('vencimento', inicio)
-      .lte('vencimento', fim)
-      .order('vencimento');
-
-    // ── 4. Tratamento de erro — sempre limpa o loading ────────────────────
-    if (error) {
-      console.error('Erro detalhado:', error);
-      CF.toast('Erro ao carregar cobranças: ' + error.message, 'error');
-      // Remove o spinner e mostra mensagem de erro na tabela
-      document.getElementById('lista-cobrancas').innerHTML = `
-        <tr><td colspan="7">
-          <div class="empty-state">
-            <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <p style="color:var(--red)">Falha ao carregar. Verifique o console (F12) para detalhes.</p>
-          </div>
-        </td></tr>`;
+    // ── 3. Query simples — select(*), sem join, filtra por usuario_id ─────
+    let data, error;
+    try {
+      ({ data, error } = await _sb
+        .from('cobrancas')
+        .select('*')
+        .eq('usuario_id', userId)
+        .gte('vencimento', inicio)
+        .lte('vencimento', fim)
+        .order('vencimento'));
+    } catch (e) {
+      // Captura erros de rede / exceção JS inesperada
+      console.error('[ClinFit] Exceção inesperada em carregarCobrancas:', e);
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+        <p style="color:var(--red)">Erro de rede. Verifique sua conexão.</p></div></td></tr>`;
+      CF.toast('Erro de rede ao carregar cobranças.', 'error');
       return;
     }
 
-    console.log('[financeiro] Cobranças recebidas:', data?.length ?? 0, 'registros');
+    // ── 4. Erro do Supabase — mostra detalhes completos ───────────────────
+    if (error) {
+      // Log completo para diagnóstico
+      console.error('%c[ClinFit] Erro Supabase:', 'color:red;font-weight:bold', {
+        message: error.message,
+        code:    error.code,
+        details: error.details,
+        hint:    error.hint
+      });
 
-    // ── 5. Resolve nomes localmente usando o array clientes já carregado ──
-    //    (evita depender de FK no Supabase para o join clientes(nome))
+      // Toast com mensagem detalhada
+      const msg = error.message || 'Erro desconhecido';
+      CF.toast('Falha: ' + msg, 'error');
+
+      // Tabela mostra o erro em vez de ficar travada no spinner
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+        <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p style="color:var(--red);margin-top:8px"><strong>Falha ao carregar</strong></p>
+        <p style="font-size:12px;opacity:.7;margin-top:4px">${msg}<br>Abra o console (F12) para detalhes completos.</p>
+      </div></td></tr>`;
+      return;
+    }
+
+    console.log('%c[ClinFit]', 'color:#16a34a', data?.length ?? 0, 'cobranças carregadas');
+
+    // ── 5. Resolve nomes via cliMap (sem depender de FK no banco) ─────────
     const cliMap = {};
     clientes.forEach(c => { cliMap[c.id] = c.nome; });
 
