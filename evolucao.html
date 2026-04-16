@@ -6,6 +6,7 @@
   <title>ClinFit — Evolução</title>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/clinfit.js"></script>
   <!-- Chart.js para o gráfico de linha -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
@@ -208,9 +209,7 @@
 
 <div class="toast-container" id="toast-container"></div>
 
-<script type="module">
-  import { initPage, showToast, setLoading, formatDate } from './js/auth.js';
-  import supabase from './js/supabase.js';
+<script>
 
   let userId   = null;
   let clienteId = null;
@@ -218,7 +217,7 @@
   let grafico   = null;
 
   (async () => {
-    const auth = await initPage('nav-evolucao');
+    const auth = await CF.initPage('nav-evolucao');
     if (!auth) return;
     userId = auth.user.id;
     await carregarClientes();
@@ -258,7 +257,7 @@
       .eq('cliente_id', clienteId)
       .order('data');
 
-    if (error) { showToast('Erro ao carregar registros.', 'error'); return; }
+    if (error) { CF.toast('Erro ao carregar registros.', 'error'); return; }
     registros = data || [];
     renderResumo();
     renderGrafico();
@@ -302,7 +301,7 @@
     const comPeso = registros.filter(r => r.peso != null);
     if (!comPeso.length) return;
 
-    const labels = comPeso.map(r => formatDate(r.data));
+    const labels = comPeso.map(r => CF.date(r.data));
     const dados  = comPeso.map(r => r.peso);
 
     grafico = new Chart(ctx, {
@@ -372,7 +371,7 @@
 
     tbody.innerHTML = lista.map(r => `
       <tr class="fade-in">
-        <td>${formatDate(r.data)}</td>
+        <td>${CF.date(r.data)}</td>
         <td>${r.peso    ?? '—'}</td>
         <td>${r.gordura ?? '—'}</td>
         <td>${r.cintura ?? '—'}</td>
@@ -443,7 +442,7 @@
     const id   = document.getElementById('reg-id').value;
     const data = document.getElementById('reg-data').value;
 
-    if (!data) { showToast('Informe a data do registro.', 'error'); return; }
+    if (!data) { CF.toast('Informe a data do registro.', 'error'); return; }
 
     const numOuNull = (id) => {
       const v = document.getElementById(id).value;
@@ -462,23 +461,23 @@
       observacoes: document.getElementById('reg-obs').value.trim() || null
     };
 
-    setLoading(btn, true);
+    CF.loading(btn, true);
     try {
       if (id) {
-        const { error } = await supabase.from('evolucao').update(payload).eq('id', id);
+        const { error } = await _sb.from('evolucao').update(payload).eq('id', id);
         if (error) throw error;
-        showToast('Registro atualizado!', 'success');
+        CF.toast('Registro atualizado!', 'success');
       } else {
-        const { error } = await supabase.from('evolucao').insert(payload);
+        const { error } = await _sb.from('evolucao').insert(payload);
         if (error) throw error;
-        showToast('Registro salvo!', 'success');
+        CF.toast('Registro salvo!', 'success');
       }
       fecharModal();
       await carregarRegistros();
     } catch (err) {
-      showToast(`Erro: ${err.message}`, 'error');
+      CF.toast(`Erro: ${err.message}`, 'error');
     } finally {
-      setLoading(btn, false);
+      CF.loading(btn, false);
     }
   });
 
@@ -486,18 +485,18 @@
   document.getElementById('btn-excluir-reg').addEventListener('click', async () => {
     const id = document.getElementById('reg-id').value;
     if (!id || !confirm('Deseja excluir este registro?')) return;
-    const { error } = await supabase.from('evolucao').delete().eq('id', id);
-    if (error) { showToast('Erro ao excluir.', 'error'); return; }
-    showToast('Registro excluído.', 'info');
+    const { error } = await _sb.from('evolucao').delete().eq('id', id);
+    if (error) { CF.toast('Erro ao excluir.', 'error'); return; }
+    CF.toast('Registro excluído.', 'info');
     fecharModal();
     await carregarRegistros();
   });
 
   window.excluir = async (id) => {
     if (!confirm('Deseja excluir este registro?')) return;
-    const { error } = await supabase.from('evolucao').delete().eq('id', id);
-    if (error) { showToast('Erro ao excluir.', 'error'); return; }
-    showToast('Registro excluído.', 'info');
+    const { error } = await _sb.from('evolucao').delete().eq('id', id);
+    if (error) { CF.toast('Erro ao excluir.', 'error'); return; }
+    CF.toast('Registro excluído.', 'info');
     await carregarRegistros();
   };
 </script>

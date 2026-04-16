@@ -6,6 +6,7 @@
   <title>ClinFit — Agenda</title>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/clinfit.js"></script>
 </head>
 <body>
 
@@ -159,9 +160,7 @@
 
 <div class="toast-container" id="toast-container"></div>
 
-<script type="module">
-  import { initPage, showToast, setLoading, formatDate } from './js/auth.js';
-  import supabase from './js/supabase.js';
+<script>
 
   let userId   = null;
   let clientes = [];
@@ -169,7 +168,7 @@
   let semanaOffset = 0; // 0 = semana atual
 
   (async () => {
-    const auth = await initPage('nav-agenda');
+    const auth = await CF.initPage('nav-agenda');
     if (!auth) return;
     userId = auth.user.id;
 
@@ -274,7 +273,7 @@
       .lte('data', toISO(fim))
       .order('horario');
 
-    if (error) { showToast('Erro ao carregar sessões.', 'error'); return; }
+    if (error) { CF.toast('Erro ao carregar sessões.', 'error'); return; }
     sessoes = data || [];
     renderSessoesSemana();
   }
@@ -357,7 +356,7 @@
     const horario  = document.getElementById('s-horario').value;
 
     if (!clienteId || !data || !horario) {
-      showToast('Preencha cliente, data e horário.', 'error');
+      CF.toast('Preencha cliente, data e horário.', 'error');
       return;
     }
 
@@ -372,23 +371,23 @@
       observacoes: document.getElementById('s-obs').value.trim() || null
     };
 
-    setLoading(btn, true);
+    CF.loading(btn, true);
     try {
       if (id) {
-        const { error } = await supabase.from('sessoes').update(payload).eq('id', id);
+        const { error } = await _sb.from('sessoes').update(payload).eq('id', id);
         if (error) throw error;
-        showToast('Sessão atualizada!', 'success');
+        CF.toast('Sessão atualizada!', 'success');
       } else {
-        const { error } = await supabase.from('sessoes').insert(payload);
+        const { error } = await _sb.from('sessoes').insert(payload);
         if (error) throw error;
-        showToast('Sessão agendada!', 'success');
+        CF.toast('Sessão agendada!', 'success');
       }
       fecharModal();
       await carregarSessoes();
     } catch (err) {
-      showToast(`Erro: ${err.message}`, 'error');
+      CF.toast(`Erro: ${err.message}`, 'error');
     } finally {
-      setLoading(btn, false);
+      CF.loading(btn, false);
     }
   });
 
@@ -397,9 +396,9 @@
     const id = document.getElementById('sessao-id').value;
     if (!id || !confirm('Deseja excluir esta sessão?')) return;
 
-    const { error } = await supabase.from('sessoes').delete().eq('id', id);
-    if (error) { showToast('Erro ao excluir.', 'error'); return; }
-    showToast('Sessão excluída.', 'info');
+    const { error } = await _sb.from('sessoes').delete().eq('id', id);
+    if (error) { CF.toast('Erro ao excluir.', 'error'); return; }
+    CF.toast('Sessão excluída.', 'info');
     fecharModal();
     await carregarSessoes();
   });

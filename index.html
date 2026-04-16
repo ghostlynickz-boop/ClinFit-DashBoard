@@ -8,6 +8,7 @@
 
   <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/clinfit.js"></script>
 </head>
 <body>
 
@@ -66,12 +67,11 @@
   </div>
 </div>
 
-<script type="module">
-  import { login, getUser, showToast, setLoading } from './js/auth.js';
+<script>
 
   // Se já estiver logado, redireciona direto para o dashboard
   (async () => {
-    const user = await getUser();
+    const user = await CF.getUser();
     if (user) window.location.href = 'app.html';
   })();
 
@@ -92,13 +92,13 @@
     }
 
     errDiv.classList.remove('show');
-    setLoading(btn, true);
+    CF.loading(btn, true);
 
     try {
-      await login(email, senha);
+      await CF.login(email, senha);
       window.location.href = 'app.html';
     } catch (err) {
-      setLoading(btn, false);
+      CF.loading(btn, false);
 
       // Traduz mensagens comuns do Supabase
       let msg = 'Erro ao entrar. Tente novamente.';

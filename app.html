@@ -6,6 +6,7 @@
   <title>ClinFit — Dashboard</title>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/clinfit.js"></script>
 </head>
 <body>
 
@@ -155,17 +156,15 @@
 <!-- Toast -->
 <div class="toast-container" id="toast-container"></div>
 
-<script type="module">
-  import { initPage, formatCurrency, formatDate, getGreeting } from './js/auth.js';
-  import supabase from './js/supabase.js';
+<script>
 
   (async () => {
-    const auth = await initPage('nav-dashboard');
+    const auth = await CF.initPage('nav-dashboard');
     if (!auth) return;
     const { user } = auth;
 
     // Atualiza saudação
-    document.getElementById('greeting-text').textContent = getGreeting();
+    document.getElementById('greeting-text').textContent = CF.greeting();
 
     const hoje = new Date().toISOString().split('T')[0];
     const mesAtual = hoje.slice(0, 7); // YYYY-MM
@@ -176,18 +175,18 @@
       { data: clientesAtivos },
       { data: cobrancas }
     ] = await Promise.all([
-      supabase.from('sessoes')
+      _sb.from('sessoes')
         .select('*, clientes(nome)')
         .eq('usuario_id', user.id)
         .eq('data', hoje)
         .order('horario'),
 
-      supabase.from('clientes')
+      _sb.from('clientes')
         .select('id')
         .eq('usuario_id', user.id)
         .eq('status', 'ativo'),
 
-      supabase.from('cobrancas')
+      _sb.from('cobrancas')
         .select('*, clientes(nome)')
         .eq('usuario_id', user.id)
         .gte('vencimento', `${mesAtual}-01`)
@@ -201,8 +200,8 @@
     const recebido = cobrancas?.filter(c => c.status === 'pago').reduce((s, c) => s + +c.valor, 0) ?? 0;
     const pendente = cobrancas?.filter(c => c.status === 'pendente').reduce((s, c) => s + +c.valor, 0) ?? 0;
 
-    document.getElementById('m-recebido').textContent  = formatCurrency(recebido);
-    document.getElementById('m-pendente').textContent  = formatCurrency(pendente);
+    document.getElementById('m-recebido').textContent  = CF.currency(recebido);
+    document.getElementById('m-pendente').textContent  = CF.currency(pendente);
     document.getElementById('m-recebido-sub').textContent = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
     // ── Sessões de hoje ──
@@ -240,10 +239,10 @@
         <div class="session-item">
           <div class="session-info">
             <div class="session-name">${c.clientes?.nome ?? '—'}</div>
-            <div class="session-detail">Vence em ${formatDate(c.vencimento)} · ${c.descricao ?? ''}</div>
+            <div class="session-detail">Vence em ${CF.date(c.vencimento)} · ${c.descricao ?? ''}</div>
           </div>
           <div style="text-align:right;flex-shrink:0">
-            <div style="font-weight:700;color:var(--yellow)">${formatCurrency(c.valor)}</div>
+            <div style="font-weight:700;color:var(--yellow)">${CF.currency(c.valor)}</div>
             <span class="badge badge-yellow">Pendente</span>
           </div>
         </div>`).join('');

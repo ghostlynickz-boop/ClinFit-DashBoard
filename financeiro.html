@@ -6,6 +6,7 @@
   <title>ClinFit — Financeiro</title>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/clinfit.js"></script>
 </head>
 <body>
 
@@ -192,9 +193,7 @@
 
 <div class="toast-container" id="toast-container"></div>
 
-<script type="module">
-  import { initPage, showToast, setLoading, formatCurrency, formatDate } from './js/auth.js';
-  import supabase from './js/supabase.js';
+<script>
 
   let userId    = null;
   let clientes  = [];
@@ -205,7 +204,7 @@
                  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
   (async () => {
-    const auth = await initPage('nav-financeiro');
+    const auth = await CF.initPage('nav-financeiro');
     if (!auth) return;
     userId = auth.user.id;
     await carregarClientes();
@@ -256,7 +255,7 @@
       .lte('vencimento', fim)
       .order('vencimento');
 
-    if (error) { showToast('Erro ao carregar cobranças.', 'error'); return; }
+    if (error) { CF.toast('Erro ao carregar cobranças.', 'error'); return; }
     cobrancas = data || [];
     renderResumo();
     renderTabela(cobrancas);
@@ -268,8 +267,8 @@
     const totPago  = pagos.reduce((s, c) => s + +c.valor, 0);
     const totPend  = pendentes.reduce((s, c) => s + +c.valor, 0);
 
-    document.getElementById('total-recebido').textContent = formatCurrency(totPago);
-    document.getElementById('total-pendente').textContent = formatCurrency(totPend);
+    document.getElementById('total-recebido').textContent = CF.currency(totPago);
+    document.getElementById('total-pendente').textContent = CF.currency(totPend);
     document.getElementById('qtd-pago').textContent       = `${pagos.length} cobrança${pagos.length !== 1 ? 's' : ''} paga${pagos.length !== 1 ? 's' : ''}`;
     document.getElementById('qtd-pendente').textContent   = `${pendentes.length} cobrança${pendentes.length !== 1 ? 's' : ''} pendente${pendentes.length !== 1 ? 's' : ''}`;
   }
@@ -294,8 +293,8 @@
         <td><strong>${c.clientes?.nome || '—'}</strong></td>
         <td>${c.descricao || '—'}</td>
         <td><span class="badge badge-blue">${tipoLabel[c.tipo] || c.tipo}</span></td>
-        <td>${formatDate(c.vencimento)}</td>
-        <td style="font-weight:700">${formatCurrency(c.valor)}</td>
+        <td>${CF.date(c.vencimento)}</td>
+        <td style="font-weight:700">${CF.currency(c.valor)}</td>
         <td>
           <span class="badge ${c.status === 'pago' ? 'badge-green' : 'badge-yellow'}">
             ${c.status === 'pago' ? 'Pago' : 'Pendente'}
@@ -335,9 +334,9 @@
 
   // ── Marcar como pago ─────────────────────────────────────────────────────
   window.marcarPago = async (id) => {
-    const { error } = await supabase.from('cobrancas').update({ status: 'pago' }).eq('id', id);
-    if (error) { showToast('Erro ao atualizar.', 'error'); return; }
-    showToast('Cobrança marcada como paga!', 'success');
+    const { error } = await _sb.from('cobrancas').update({ status: 'pago' }).eq('id', id);
+    if (error) { CF.toast('Erro ao atualizar.', 'error'); return; }
+    CF.toast('Cobrança marcada como paga!', 'success');
     await carregarCobrancas();
   };
 
@@ -389,7 +388,7 @@
     const venc      = document.getElementById('cob-vencimento').value;
 
     if (!clienteId || !valor || !venc) {
-      showToast('Preencha cliente, valor e vencimento.', 'error');
+      CF.toast('Preencha cliente, valor e vencimento.', 'error');
       return;
     }
 
@@ -403,32 +402,32 @@
       descricao:  document.getElementById('cob-descricao').value.trim() || null
     };
 
-    setLoading(btn, true);
+    CF.loading(btn, true);
     try {
       if (id) {
-        const { error } = await supabase.from('cobrancas').update(payload).eq('id', id);
+        const { error } = await _sb.from('cobrancas').update(payload).eq('id', id);
         if (error) throw error;
-        showToast('Cobrança atualizada!', 'success');
+        CF.toast('Cobrança atualizada!', 'success');
       } else {
-        const { error } = await supabase.from('cobrancas').insert(payload);
+        const { error } = await _sb.from('cobrancas').insert(payload);
         if (error) throw error;
-        showToast('Cobrança criada!', 'success');
+        CF.toast('Cobrança criada!', 'success');
       }
       fecharModal();
       await carregarCobrancas();
     } catch (err) {
-      showToast(`Erro: ${err.message}`, 'error');
+      CF.toast(`Erro: ${err.message}`, 'error');
     } finally {
-      setLoading(btn, false);
+      CF.loading(btn, false);
     }
   });
 
   // ── Excluir ───────────────────────────────────────────────────────────────
   window.excluir = async (id) => {
     if (!confirm('Deseja excluir esta cobrança?')) return;
-    const { error } = await supabase.from('cobrancas').delete().eq('id', id);
-    if (error) { showToast('Erro ao excluir.', 'error'); return; }
-    showToast('Cobrança excluída.', 'info');
+    const { error } = await _sb.from('cobrancas').delete().eq('id', id);
+    if (error) { CF.toast('Erro ao excluir.', 'error'); return; }
+    CF.toast('Cobrança excluída.', 'info');
     await carregarCobrancas();
   };
 </script>
