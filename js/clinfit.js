@@ -145,19 +145,33 @@
 
     /* Preenche sidebar com dados do usuário */
     sidebar: function (user, profile) {
-      var nome   = (profile && profile.nome) || (user && user.email.split('@')[0]) || 'Usuário';
-      var email  = (user && user.email) || '';
-      var avatar = nome.charAt(0).toUpperCase();
+      var nome      = (profile && profile.nome) || (user && user.email.split('@')[0]) || 'Usuário';
+      var email     = (user && user.email) || '';
+      var avatarUrl = profile && profile.avatar_url;
 
       var elNome   = document.getElementById('sidebar-username');
       var elEmail  = document.getElementById('sidebar-email');
       var elAvatar = document.getElementById('sidebar-avatar');
       var elGreet  = document.getElementById('greeting-name');
 
-      if (elNome)   elNome.textContent   = nome;
-      if (elEmail)  elEmail.textContent  = email;
-      if (elAvatar) elAvatar.textContent = avatar;
-      if (elGreet)  elGreet.textContent  = nome.split(' ')[0];
+      if (elNome)  elNome.textContent  = nome;
+      if (elEmail) elEmail.textContent = email;
+      if (elGreet) elGreet.textContent = nome.split(' ')[0];
+
+      if (elAvatar) {
+        if (avatarUrl) {
+          /* Exibe a foto de perfil salva */
+          elAvatar.textContent = '';
+          elAvatar.style.backgroundImage  = 'url(' + avatarUrl + ')';
+          elAvatar.style.backgroundSize   = 'cover';
+          elAvatar.style.backgroundRepeat = 'no-repeat';
+          elAvatar.style.backgroundPosition = 'center';
+        } else {
+          /* Sem foto: mostra inicial do nome */
+          elAvatar.textContent = nome.charAt(0).toUpperCase();
+          elAvatar.style.backgroundImage = '';
+        }
+      }
     },
 
     /* Faz login com email/senha */
