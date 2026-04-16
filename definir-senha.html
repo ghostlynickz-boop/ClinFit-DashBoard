@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClinFit — Definir Senha</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0a;
+      color: #f9fafb;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 16px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 24px 48px rgba(0,0,0,.5);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+    .logo img {
+      height: 40px;
+    }
+    .logo-fallback {
+      font-size: 22px;
+      font-weight: 700;
+      color: #16a34a;
+      letter-spacing: -.5px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f9fafb;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #6b7280;
+      text-align: center;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    .form-group { margin-bottom: 18px; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #d1d5db;
+      margin-bottom: 6px;
+    }
+
+    .input-wrap { position: relative; }
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 10px;
+      padding: 12px 44px 12px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #f9fafb;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input:focus { border-color: #16a34a; }
+
+    .btn-eye {
+      position: absolute;
+      right: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #6b7280;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+    }
+    .btn-eye:hover { color: #9ca3af; }
+
+    .btn-submit {
+      width: 100%;
+      background: #16a34a;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .15s, opacity .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .btn-submit:hover:not(:disabled) { background: #15803d; }
+    .btn-submit:disabled { opacity: .6; cursor: not-allowed; }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .alert {
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: 18px;
+      display: none;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .alert.visible { display: flex; }
+    .alert-error {
+      background: rgba(220,38,38,.12);
+      border: 1px solid rgba(220,38,38,.3);
+      color: #fca5a5;
+    }
+    .alert-success {
+      background: rgba(22,163,74,.12);
+      border: 1px solid rgba(22,163,74,.3);
+      color: #86efac;
+    }
+
+    /* Estado de token inválido */
+    .invalid-state {
+      text-align: center;
+      display: none;
+    }
+    .invalid-state svg { color: #dc2626; margin-bottom: 12px; }
+    .invalid-state p { color: #6b7280; font-size: 14px; line-height: 1.6; }
+    .invalid-state a {
+      display: inline-block;
+      margin-top: 16px;
+      color: #16a34a;
+      font-size: 14px;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .invalid-state a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <img src="assets/logo.png" alt="ClinFit"
+         onerror="this.style.display='none'; document.getElementById('logo-text').style.display='block'" />
+    <span class="logo-fallback" id="logo-text" style="display:none">ClinFit</span>
+  </div>
+
+  <!-- Formulário principal -->
+  <div id="form-wrap">
+    <h1>Defina sua senha</h1>
+    <p class="subtitle">Você foi convidado para o ClinFit.<br>Crie uma senha para acessar sua conta.</p>
+
+    <div class="alert alert-error" id="alert-error">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="alert-error-msg"></span>
+    </div>
+
+    <div class="alert alert-success" id="alert-success">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>Senha definida com sucesso! Redirecionando...</span>
+    </div>
+
+    <div class="form-group">
+      <label for="senha">Nova senha</label>
+      <div class="input-wrap">
+        <input type="password" id="senha" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+        <button type="button" class="btn-eye" onclick="toggleSenha('senha', 'eye1')">
+          <svg id="eye1" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="confirmar">Confirmar senha</label>
+      <div class="input-wrap">
+        <input type="password" id="confirmar" placeholder="Repita a senha" autocomplete="new-password" />
+        <button type="button" class="btn-eye" onclick="toggleSenha('confirmar', 'eye2')">
+          <svg id="eye2" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <button class="btn-submit" id="btn-definir">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Definir senha
+    </button>
+  </div>
+
+  <!-- Estado de token inválido/expirado -->
+  <div class="invalid-state" id="invalid-state">
+    <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <h1 style="margin-bottom:8px">Link inválido</h1>
+    <p>Este link de convite expirou ou já foi usado.<br>Solicite um novo convite ao administrador.</p>
+    <a href="index.html">← Voltar ao login</a>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL      = 'https://plzxurlcvtjoihqmkrjs.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsenh1cmxjdnRqb2locW1rcmpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjUxMTEsImV4cCI6MjA5MTg0MTExMX0.lRmxHEMwa4k9o0V15Wmnl49othmFntHcK0XZF-SvslM';
+
+  const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+
+  // ── Lê o token do hash da URL e estabelece sessão ──────────────────────
+  (async () => {
+    const hash   = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const type   = params.get('type');             // "invite" ou "recovery"
+    const token  = params.get('access_token');
+    const refresh = params.get('refresh_token');
+
+    // Verifica se o link é válido (tem access_token e é do tipo convite)
+    if (!token || (type !== 'invite' && type !== 'recovery' && type !== 'signup')) {
+      // Tenta verificar se já existe sessão ativa (redirect após login)
+      const { data: { session } } = await _sb.auth.getSession();
+      if (!session) {
+        document.getElementById('form-wrap').style.display    = 'none';
+        document.getElementById('invalid-state').style.display = 'block';
+        return;
+      }
+    }
+
+    // Supabase detecta o token do hash automaticamente via detectSessionInUrl
+    // mas podemos forçar caso necessário
+    if (token && refresh) {
+      await _sb.auth.setSession({ access_token: token, refresh_token: refresh });
+    }
+  })();
+
+  // ── Mostrar/ocultar senha ──────────────────────────────────────────────
+  function toggleSenha(inputId, iconId) {
+    const inp  = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    const showing = inp.type === 'text';
+    inp.type = showing ? 'password' : 'text';
+    icon.innerHTML = showing
+      ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+      : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  }
+
+  // ── Exibe erro ────────────────────────────────────────────────────────
+  function mostrarErro(msg) {
+    const el = document.getElementById('alert-error');
+    document.getElementById('alert-error-msg').textContent = msg;
+    el.classList.add('visible');
+    document.getElementById('alert-success').classList.remove('visible');
+  }
+
+  // ── Definir senha ─────────────────────────────────────────────────────
+  document.getElementById('btn-definir').addEventListener('click', async () => {
+    const btn      = document.getElementById('btn-definir');
+    const senha    = document.getElementById('senha').value;
+    const confirmar = document.getElementById('confirmar').value;
+
+    // Validações
+    if (!senha) { mostrarErro('Informe a nova senha.'); return; }
+    if (senha.length < 6) { mostrarErro('A senha deve ter pelo menos 6 caracteres.'); return; }
+    if (senha !== confirmar) { mostrarErro('As senhas não coincidem.'); return; }
+
+    // Loading
+    btn.disabled  = true;
+    btn.innerHTML = '<div class="spinner"></div> Salvando...';
+    document.getElementById('alert-error').classList.remove('visible');
+
+    try {
+      const { error } = await _sb.auth.updateUser({ password: senha });
+
+      if (error) {
+        mostrarErro(error.message);
+        return;
+      }
+
+      // Sucesso
+      document.getElementById('alert-success').classList.add('visible');
+      setTimeout(() => { window.location.href = 'app.html'; }, 1800);
+
+    } catch (err) {
+      mostrarErro('Erro inesperado. Tente novamente.');
+    } finally {
+      btn.disabled  = false;
+      btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Definir senha';
+    }
+  });
+
+  // Submete ao pressionar Enter
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('btn-definir').click();
+  });
+</script>
+
+</body>
+</html>

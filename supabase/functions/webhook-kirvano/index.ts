@@ -15,7 +15,10 @@ Deno.serve(async (req) => {
     )
     const { error } = await supabase.auth.admin.inviteUserByEmail(
       email.trim().toLowerCase(),
-      { data: { nome: nome.trim() } }
+      {
+        data: { nome: nome.trim() },
+        redirectTo: 'https://clin-fit-dash-board.vercel.app/definir-senha.html'
+      }
     )
     if (error && !error.message.includes('already been registered')) throw error
     return new Response(JSON.stringify({ success: true, email }), { status: 200 })
