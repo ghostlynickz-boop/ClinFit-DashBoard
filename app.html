@@ -189,8 +189,8 @@
       _sb.from('cobrancas')
         .select('*, clientes(nome)')
         .eq('usuario_id', user.id)
-        .gte('vencimento', `${mesAtual}-01`)
-        .lte('vencimento', `${mesAtual}-31`)
+        .gte('vencimento', (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-01'; })())
+        .lte('vencimento', (() => { const d = new Date(); const y = d.getFullYear(); const m = d.getMonth()+1; const last = new Date(y, m, 0).getDate(); return y + '-' + String(m).padStart(2,'0') + '-' + String(last).padStart(2,'0'); })())
     ]);
 
     // ── Métricas ──

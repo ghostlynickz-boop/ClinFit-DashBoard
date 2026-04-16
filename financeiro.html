@@ -233,7 +233,7 @@
 
   // ── Dados ────────────────────────────────────────────────────────────────
   async function carregarClientes() {
-    const { data } = await supabase
+    const { data } = await _sb
       .from('clientes').select('id,nome').eq('usuario_id', userId).order('nome');
     clientes = data || [];
 
@@ -244,10 +244,13 @@
 
   async function carregarCobrancas() {
     const { ano, mes } = getMes();
-    const inicio = `${ano}-${String(mes).padStart(2,'0')}-01`;
-    const fim    = `${ano}-${String(mes).padStart(2,'0')}-31`;
+    const mm      = String(mes).padStart(2, '0');
+    const inicio  = `${ano}-${mm}-01`;
+    // Último dia real do mês — evita datas inválidas como 2026-04-31
+    const ultimoDia = new Date(ano, mes, 0).getDate();
+    const fim       = `${ano}-${mm}-${String(ultimoDia).padStart(2, '0')}`;
 
-    const { data, error } = await supabase
+    const { data, error } = await _sb
       .from('cobrancas')
       .select('*, clientes(nome)')
       .eq('usuario_id', userId)
@@ -255,7 +258,11 @@
       .lte('vencimento', fim)
       .order('vencimento');
 
-    if (error) { CF.toast('Erro ao carregar cobranças.', 'error'); return; }
+    if (error) {
+      CF.toast('Erro: ' + error.message, 'error');
+      console.error('[financeiro] Supabase error:', error);
+      return;
+    }
     cobrancas = data || [];
     renderResumo();
     renderTabela(cobrancas);

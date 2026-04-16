@@ -248,7 +248,7 @@
 
   // ── Carregar dados ──────────────────────────────────────────────────────
   async function carregarClientes() {
-    const { data } = await supabase
+    const { data } = await _sb
       .from('clientes')
       .select('id, nome')
       .eq('usuario_id', userId)
@@ -265,7 +265,7 @@
     const inicio = getInicioSemana(semanaOffset);
     const fim    = new Date(inicio); fim.setDate(inicio.getDate() + 6);
 
-    const { data, error } = await supabase
+    const { data, error } = await _sb
       .from('sessoes')
       .select('*')
       .eq('usuario_id', userId)

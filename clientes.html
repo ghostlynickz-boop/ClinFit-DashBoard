@@ -181,7 +181,7 @@
 
   // ── Carregar clientes ──────────────────────────────────────────────────
   async function carregarClientes() {
-    const { data, error } = await supabase
+    const { data, error } = await _sb
       .from('clientes')
       .select('*')
       .eq('usuario_id', userId)
