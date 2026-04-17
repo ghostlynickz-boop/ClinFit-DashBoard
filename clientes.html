@@ -343,7 +343,7 @@
       fecharModal();
       await carregarClientes();
     } catch (err) {
-      CF.toast(`Erro ao salvar: ${err.message}`, 'error');
+      CF.toast('Erro ao salvar. Tente novamente.', 'error');
     } finally {
       CF.loading(btn, false);
     }

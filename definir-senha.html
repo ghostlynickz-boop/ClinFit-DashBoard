@@ -200,7 +200,7 @@
     <div class="form-group">
       <label for="senha">Nova senha</label>
       <div class="input-wrap">
-        <input type="password" id="senha" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+        <input type="password" id="senha" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
         <button type="button" class="btn-eye" onclick="toggleSenha('senha', 'eye1')">
           <svg id="eye1" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
@@ -268,8 +268,6 @@
   let formShown = false;
 
   _sb.auth.onAuthStateChange((event, session) => {
-    console.log('[definir-senha] auth event:', event, '| session:', !!session);
-
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
       if (!formShown) { formShown = true; mostrarFormulario(); }
     }
@@ -288,13 +286,11 @@
     const queryType   = queryParams.get('type');
 
     if (queryToken && (queryType === 'invite' || queryType === 'magiclink')) {
-      console.log('[definir-senha] tentando verifyOtp com token da query string');
       const { error } = await _sb.auth.verifyOtp({
         token_hash: queryToken,
         type: 'invite'
       });
       if (!error && !formShown) { formShown = true; mostrarFormulario(); return; }
-      console.error('[definir-senha] verifyOtp error:', error);
     }
 
     // Sem token válido em nenhuma das formas
@@ -304,7 +300,6 @@
   // ── Segurança extra: timeout de 5s caso onAuthStateChange não dispare ─
   setTimeout(() => {
     if (!formShown) {
-      console.warn('[definir-senha] timeout — verificando sessão manualmente');
       _sb.auth.getSession().then(({ data: { session } }) => {
         if (session && !formShown) { formShown = true; mostrarFormulario(); }
         else if (!formShown) mostrarLinkInvalido();
@@ -330,7 +325,7 @@
     const confirmar = document.getElementById('confirmar').value;
 
     if (!senha)              { mostrarErroInline('Informe a nova senha.'); return; }
-    if (senha.length < 6)   { mostrarErroInline('A senha deve ter pelo menos 6 caracteres.'); return; }
+    if (senha.length < 8)   { mostrarErroInline('A senha deve ter pelo menos 8 caracteres.'); return; }
     if (senha !== confirmar) { mostrarErroInline('As senhas não coincidem.'); return; }
 
     btn.disabled  = true;

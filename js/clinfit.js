@@ -209,11 +209,33 @@
     },
 
     /**
+     * Inicia timeout de inatividade (padrão: 60 min).
+     * Após esse tempo sem interação do usuário, a sessão é encerrada automaticamente.
+     */
+    _initIdleTimeout: function (minutos) {
+      var ms = (minutos || 60) * 60 * 1000;
+      var timer;
+      var self = this;
+      var reset = function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          CF.toast('Sessão encerrada por inatividade.', 'info');
+          setTimeout(function () { self.logout(); }, 1500);
+        }, ms);
+      };
+      ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function (ev) {
+        document.addEventListener(ev, reset, { passive: true });
+      });
+      reset();
+    },
+
+    /**
      * Inicializa página protegida:
      *   - verifica auth (redireciona se não logado)
      *   - preenche sidebar
      *   - ativa item de navegação
      *   - configura botão sair, data e menu mobile
+     *   - inicia timeout de inatividade (60 min)
      */
     initPage: async function (activeNav) {
       var auth = await this.requireAuth();
@@ -250,6 +272,9 @@
           }
         });
       }
+
+      /* Timeout de inatividade: encerra sessão após 60 minutos sem interação */
+      this._initIdleTimeout(60);
 
       return auth;
     }

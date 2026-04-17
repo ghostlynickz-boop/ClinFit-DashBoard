@@ -399,7 +399,9 @@
     const sideAvatar = document.getElementById('sidebar-avatar');
     if (sideAvatar) {
       if (url) {
-        sideAvatar.style.backgroundImage  = `url(${url})`;
+        // CSS injection fix: escapa caracteres perigosos antes de usar em backgroundImage
+        const safeUrl = url.replace(/['"\\]/g, '');
+        sideAvatar.style.backgroundImage  = 'url("' + safeUrl + '")';
         sideAvatar.style.backgroundSize   = 'cover';
         sideAvatar.style.backgroundRepeat = 'no-repeat';
         sideAvatar.textContent = '';
