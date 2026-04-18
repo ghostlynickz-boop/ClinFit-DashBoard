@@ -32,9 +32,13 @@ module.exports = async (req, res) => {
   console.log('[webhook] token encontrado:', tokenRecebido ? '✓ presente' : '✗ ausente');
   console.log('[webhook] body keys:', JSON.stringify(Object.keys(req.body ?? {})));
 
+  // DIAGNÓSTICO TEMPORÁRIO: aceita mesmo sem token para ver o payload completo
+  // Remover após identificar o header correto da Cakto
   if (tokenRecebido !== secret) {
-    console.warn('[webhook] Token inválido ou ausente');
-    return res.status(401).json({ error: 'Unauthorized' });
+    console.warn('[webhook] DIAGNÓSTICO — token não bateu, mas continuando para logar payload');
+    console.warn('[webhook] secret esperado (primeiros 8 chars):', secret.slice(0, 8) + '...');
+    console.warn('[webhook] token recebido:', tokenRecebido || '(nenhum)');
+    // return res.status(401).json({ error: 'Unauthorized' }); // desativado temporariamente
   }
 
   // ── Extração de nome e email do payload da Cakto ──────────────────────────
