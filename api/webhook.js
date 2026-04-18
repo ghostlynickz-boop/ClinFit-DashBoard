@@ -17,9 +17,9 @@ module.exports = async (req, res) => {
   }
 
   const body = req.body ?? {};
-  const tokenRecebido = body.secret || '';
+  const tokenRecebido = (body.secret || '').trim();
 
-  if (tokenRecebido !== secret) {
+  if (tokenRecebido !== secret.trim()) {
     console.warn('[webhook] Token inválido ou ausente');
     return res.status(401).json({ error: 'Unauthorized' });
   }
